@@ -1,5 +1,14 @@
+/**
+* Template Name: iPortfolio
+* Template URL: https://bootstrapmade.com/iportfolio-bootstrap-portfolio-websites-template/
+* Updated: Jun 29 2024 with Bootstrap v5.3.3
+* Author: BootstrapMade.com
+* License: https://bootstrapmade.com/license/
+*/
+
 (function () {
   "use strict";
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /**
    * Header toggle
@@ -28,79 +37,22 @@
   /**
    * Contact modal trigger from sidebar
    */
-  const contactModalTrigger = document.querySelector('#contact-modal-trigger');
+  const contactModalTriggers = document.querySelectorAll('[data-contact-modal-trigger]');
   const contactFormModalEl = document.querySelector('#contactFormModal');
-  if (contactModalTrigger && contactFormModalEl && typeof bootstrap !== 'undefined') {
-    contactModalTrigger.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.history.replaceState(null, '', '#contact');
+  if (contactModalTriggers.length && contactFormModalEl && typeof bootstrap !== 'undefined') {
+    contactModalTriggers.forEach((trigger) => {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.history.replaceState(null, '', '#contact');
+        const contactFormModal = bootstrap.Modal.getOrCreateInstance(contactFormModalEl);
+        contactFormModal.show();
+      });
+    });
+
+    if (window.location.hash === '#contact') {
       const contactFormModal = bootstrap.Modal.getOrCreateInstance(contactFormModalEl);
       contactFormModal.show();
-    });
-  }
-
-  /**
-   * Contact form submit via AJAX (Formspree) without page redirect
-   */
-  const contactForm = document.querySelector('#contactFormModal form');
-  if (contactForm) {
-    const loadingMessage = contactForm.querySelector('.loading');
-    const errorMessage = contactForm.querySelector('.error-message');
-    const sentMessage = contactForm.querySelector('.sent-message');
-    const submitButton = contactForm.querySelector('button[type="submit"]');
-    const defaultButtonText = submitButton ? submitButton.textContent : 'Send Message';
-
-    contactForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      if (loadingMessage) loadingMessage.classList.add('d-block');
-      if (errorMessage) {
-        errorMessage.classList.remove('d-block');
-        errorMessage.textContent = '';
-      }
-      if (sentMessage) sentMessage.classList.remove('d-block');
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Sending...';
-      }
-
-      try {
-        const response = await fetch(contactForm.action, {
-          method: 'POST',
-          body: new FormData(contactForm),
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          let message = 'Failed to send message. Please try again.';
-          try {
-            const data = await response.json();
-            if (data && Array.isArray(data.errors) && data.errors[0] && data.errors[0].message) {
-              message = data.errors[0].message;
-            }
-          } catch (err) {
-            // Keep generic message if response is not JSON
-          }
-          throw new Error(message);
-        }
-
-        contactForm.reset();
-        if (sentMessage) sentMessage.classList.add('d-block');
-      } catch (error) {
-        if (errorMessage) {
-          errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
-          errorMessage.classList.add('d-block');
-        }
-      } finally {
-        if (loadingMessage) loadingMessage.classList.remove('d-block');
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.textContent = defaultButtonText;
-        }
-      }
-    });
+    }
   }
 
   /**
@@ -139,7 +91,7 @@
     e.preventDefault();
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
     });
   });
 
@@ -150,6 +102,8 @@
    * Animation on scroll function and init
    */
   function aosInit() {
+    if (typeof AOS === 'undefined') return;
+    if (prefersReducedMotion) return;
     AOS.init({
       duration: 600,
       easing: 'ease-in-out',
@@ -163,7 +117,7 @@
    * Init typed.js
    */
   const selectTyped = document.querySelector('.typed');
-  if (selectTyped) {
+  if (selectTyped && typeof Typed !== 'undefined') {
     let typed_strings = selectTyped.getAttribute('data-typed-items');
     typed_strings = typed_strings.split(',');
     new Typed('.typed', {
@@ -178,7 +132,9 @@
   /**
    * Initiate Pure Counter
    */
-  new PureCounter();
+  if (typeof PureCounter !== 'undefined') {
+    new PureCounter();
+  }
 
   /**
    * Animate the skills items on reveal
@@ -200,14 +156,17 @@
   /**
    * Initiate glightbox
    */
-  const glightbox = GLightbox({
-    selector: '.glightbox'
-  });
+  if (typeof GLightbox !== 'undefined') {
+    GLightbox({
+      selector: '.glightbox'
+    });
+  }
 
   /**
    * Init isotope layout and filters
    */
-  document.querySelectorAll('.isotope-layout').forEach(function (isotopeItem) {
+  if (typeof Isotope !== 'undefined' && typeof imagesLoaded !== 'undefined') {
+    document.querySelectorAll('.isotope-layout').forEach(function (isotopeItem) {
     let layout = isotopeItem.getAttribute('data-layout') ?? 'masonry';
     let filter = isotopeItem.getAttribute('data-default-filter') ?? '*';
     let sort = isotopeItem.getAttribute('data-sort') ?? 'original-order';
@@ -235,7 +194,8 @@
       }, false);
     });
 
-  });
+    });
+  }
 
   /**
    * Init swiper sliders
@@ -261,13 +221,18 @@
    */
   window.addEventListener('load', function (e) {
     if (window.location.hash) {
-      if (document.querySelector(window.location.hash)) {
+      let section = null;
+      try {
+        section = document.querySelector(window.location.hash);
+      } catch (err) {
+        section = null;
+      }
+      if (section) {
         setTimeout(() => {
-          let section = document.querySelector(window.location.hash);
           let scrollMarginTop = getComputedStyle(section).scrollMarginTop;
           window.scrollTo({
             top: section.offsetTop - parseInt(scrollMarginTop),
-            behavior: 'smooth'
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
           });
         }, 100);
       }
