@@ -1,11 +1,3 @@
-/**
-* Template Name: iPortfolio
-* Template URL: https://bootstrapmade.com/iportfolio-bootstrap-portfolio-websites-template/
-* Updated: Jun 29 2024 with Bootstrap v5.3.3
-* Author: BootstrapMade.com
-* License: https://bootstrapmade.com/license/
-*/
-
 (function () {
   "use strict";
 
@@ -44,6 +36,70 @@
       window.history.replaceState(null, '', '#contact');
       const contactFormModal = bootstrap.Modal.getOrCreateInstance(contactFormModalEl);
       contactFormModal.show();
+    });
+  }
+
+  /**
+   * Contact form submit via AJAX (Formspree) without page redirect
+   */
+  const contactForm = document.querySelector('#contactFormModal form');
+  if (contactForm) {
+    const loadingMessage = contactForm.querySelector('.loading');
+    const errorMessage = contactForm.querySelector('.error-message');
+    const sentMessage = contactForm.querySelector('.sent-message');
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+    const defaultButtonText = submitButton ? submitButton.textContent : 'Send Message';
+
+    contactForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (loadingMessage) loadingMessage.classList.add('d-block');
+      if (errorMessage) {
+        errorMessage.classList.remove('d-block');
+        errorMessage.textContent = '';
+      }
+      if (sentMessage) sentMessage.classList.remove('d-block');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending...';
+      }
+
+      try {
+        const response = await fetch(contactForm.action, {
+          method: 'POST',
+          body: new FormData(contactForm),
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          let message = 'Failed to send message. Please try again.';
+          try {
+            const data = await response.json();
+            if (data && Array.isArray(data.errors) && data.errors[0] && data.errors[0].message) {
+              message = data.errors[0].message;
+            }
+          } catch (err) {
+            // Keep generic message if response is not JSON
+          }
+          throw new Error(message);
+        }
+
+        contactForm.reset();
+        if (sentMessage) sentMessage.classList.add('d-block');
+      } catch (error) {
+        if (errorMessage) {
+          errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
+          errorMessage.classList.add('d-block');
+        }
+      } finally {
+        if (loadingMessage) loadingMessage.classList.remove('d-block');
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = defaultButtonText;
+        }
+      }
     });
   }
 
